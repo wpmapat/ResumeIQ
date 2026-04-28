@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ResumeIQ.API/ResumeIQ.API.csproj" />
+  <Project Path="ResumeIQ.Tests/ResumeIQ.Tests.csproj" />
+</Solution>
