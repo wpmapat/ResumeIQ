@@ -12,7 +12,7 @@ ResumeIQ solves this by:
 - **Generating a cover letter** tailored to the role
 - **Tracking all your applications** in one place so nothing falls through the cracks
 
-**Target user:** Anyone actively job hunting who wants to maximize their chances of getting shortlisted without spending hours manually tailoring every application.
+**Target user:** Anyone actively job hunting who wants to maximize their chances of getting shortlisted without spending hours manually tailoring every application. ResumeIQ is industry-agnostic — it works equally well for a software engineer applying to Microsoft, a nurse applying to a hospital, a marketing manager applying to Nike, or a teacher applying to a school. Any job seeker with a resume and a job description can use it.
 
 **Success metric:** User uploads resume once, adds a job description, and gets actionable AI suggestions in under 30 seconds.
 
