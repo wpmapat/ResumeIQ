@@ -3,6 +3,7 @@ using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Identity.Web;
+using ResumeIQ.API.BusinessLogic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,12 @@ var cosmosEndpoint = builder.Configuration["CosmosDb:AccountEndpoint"]!;
 var cosmosDatabaseName = builder.Configuration["CosmosDb:DatabaseName"]!;
 var cosmosClient = new CosmosClient(cosmosEndpoint, new DefaultAzureCredential());
 builder.Services.AddSingleton(cosmosClient);
+
+// Repositories
+builder.Services.AddScoped<IResumeRepository, ResumeRepository>();
+builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
+builder.Services.AddScoped<IAIAnalysisRepository, AIAnalysisRepository>();
+builder.Services.AddScoped<ICoverLetterRepository, CoverLetterRepository>();
 
 // Blob Storage
 var blobServiceUrl = builder.Configuration["BlobStorage:ServiceUrl"]!;
