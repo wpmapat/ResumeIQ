@@ -12,11 +12,19 @@ namespace ResumeIQ.API.Controllers
     {
         private readonly ICoverLetterRepository _coverLetterRepository;
         private readonly IJobApplicationRepository _jobApplicationRepository;
+        private readonly IResumeRepository _resumeRepository;
+        private readonly IAIService _aiService;
 
-        public CoverLetterController(ICoverLetterRepository coverLetterRepository, IJobApplicationRepository jobApplicationRepository)
+        public CoverLetterController(
+            ICoverLetterRepository coverLetterRepository,
+            IJobApplicationRepository jobApplicationRepository,
+            IResumeRepository resumeRepository,
+            IAIService aiService)
         {
             _coverLetterRepository = coverLetterRepository;
             _jobApplicationRepository = jobApplicationRepository;
+            _resumeRepository = resumeRepository;
+            _aiService = aiService;
         }
 
         private string GetUserId() =>
@@ -34,16 +42,26 @@ namespace ResumeIQ.API.Controllers
         public async Task<IActionResult> Generate(string jobApplicationId)
         {
             var userId = GetUserId();
+
             var jobApp = await _jobApplicationRepository.GetByIdAsync(jobApplicationId, userId);
             if (jobApp == null) return NotFound("Job application not found.");
 
-            // Claude API integration comes in Day 6
+            var resume = await _resumeRepository.GetByUserIdAsync(userId);
+            if (resume == null) return BadRequest("No resume found. Please upload a resume first.");
+            if (string.IsNullOrEmpty(resume.ExtractedText)) return BadRequest("Resume text not yet extracted.");
+
+            var content = await _aiService.GenerateCoverLetterAsync(
+                resume.ExtractedText,
+                jobApp.JobDescription,
+                jobApp.CompanyName,
+                jobApp.RoleTitle);
+
             var coverLetter = new CoverLetter
             {
                 Id = Guid.NewGuid().ToString(),
                 JobApplicationId = jobApplicationId,
                 UserId = userId,
-                Content = string.Empty,
+                Content = content,
                 CreatedAt = DateTime.UtcNow
             };
 

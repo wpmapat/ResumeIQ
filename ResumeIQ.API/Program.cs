@@ -38,6 +38,9 @@ var cosmosDatabaseName = builder.Configuration["CosmosDb:DatabaseName"]!;
 var cosmosClient = new CosmosClient(cosmosEndpoint, new DefaultAzureCredential());
 builder.Services.AddSingleton(cosmosClient);
 
+// AI Service
+builder.Services.AddScoped<IAIService, AIService>();
+
 // Repositories
 builder.Services.AddScoped<IResumeRepository, ResumeRepository>();
 builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();

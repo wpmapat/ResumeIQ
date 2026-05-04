@@ -12,11 +12,19 @@ namespace ResumeIQ.API.Controllers
     {
         private readonly IAIAnalysisRepository _analysisRepository;
         private readonly IJobApplicationRepository _jobApplicationRepository;
+        private readonly IResumeRepository _resumeRepository;
+        private readonly IAIService _aiService;
 
-        public AIAnalysisController(IAIAnalysisRepository analysisRepository, IJobApplicationRepository jobApplicationRepository)
+        public AIAnalysisController(
+            IAIAnalysisRepository analysisRepository,
+            IJobApplicationRepository jobApplicationRepository,
+            IResumeRepository resumeRepository,
+            IAIService aiService)
         {
             _analysisRepository = analysisRepository;
             _jobApplicationRepository = jobApplicationRepository;
+            _resumeRepository = resumeRepository;
+            _aiService = aiService;
         }
 
         private string GetUserId() =>
@@ -34,18 +42,24 @@ namespace ResumeIQ.API.Controllers
         public async Task<IActionResult> Analyze(string jobApplicationId)
         {
             var userId = GetUserId();
+
             var jobApp = await _jobApplicationRepository.GetByIdAsync(jobApplicationId, userId);
             if (jobApp == null) return NotFound("Job application not found.");
 
-            // Claude API integration comes in Day 6
+            var resume = await _resumeRepository.GetByUserIdAsync(userId);
+            if (resume == null) return BadRequest("No resume found. Please upload a resume first.");
+            if (string.IsNullOrEmpty(resume.ExtractedText)) return BadRequest("Resume text not yet extracted.");
+
+            var result = await _aiService.AnalyzeResumeAsync(resume.ExtractedText, jobApp.JobDescription);
+
             var analysis = new AIAnalysis
             {
                 Id = Guid.NewGuid().ToString(),
                 JobApplicationId = jobApplicationId,
                 UserId = userId,
-                MatchScore = 0,
-                MissingKeywords = new List<string>(),
-                RewrittenBullets = new List<string>(),
+                MatchScore = result.MatchScore,
+                MissingKeywords = result.MissingKeywords,
+                RewrittenBullets = result.RewrittenBullets,
                 CreatedAt = DateTime.UtcNow
             };
 
