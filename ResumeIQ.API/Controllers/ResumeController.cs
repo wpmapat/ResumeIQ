@@ -12,12 +12,18 @@ namespace ResumeIQ.API.Controllers
     public class ResumeController : ControllerBase
     {
         private readonly IResumeRepository _resumeRepository;
+        private readonly IResumeParserService _resumeParserService;
         private readonly BlobServiceClient _blobServiceClient;
         private readonly IConfiguration _configuration;
 
-        public ResumeController(IResumeRepository resumeRepository, BlobServiceClient blobServiceClient, IConfiguration configuration)
+        public ResumeController(
+            IResumeRepository resumeRepository,
+            IResumeParserService resumeParserService,
+            BlobServiceClient blobServiceClient,
+            IConfiguration configuration)
         {
             _resumeRepository = resumeRepository;
+            _resumeParserService = resumeParserService;
             _blobServiceClient = blobServiceClient;
             _configuration = configuration;
         }
@@ -39,20 +45,37 @@ namespace ResumeIQ.API.Controllers
         {
             if (file == null || file.Length == 0) return BadRequest("No file provided.");
 
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (extension != ".pdf" && extension != ".docx")
+                return BadRequest("Only PDF and DOCX files are supported.");
+
             var userId = GetUserId();
+
+            // Extract text from file before uploading
+            string extractedText;
+            using (var parseStream = file.OpenReadStream())
+            {
+                extractedText = _resumeParserService.ExtractText(parseStream, extension);
+            }
+
+            // Upload to Blob Storage
             var containerName = _configuration["BlobStorage:ContainerName"]!;
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
-            var blobName = $"{userId}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var blobName = $"{userId}/{Guid.NewGuid()}{extension}";
             var blobClient = containerClient.GetBlobClient(blobName);
 
-            using var stream = file.OpenReadStream();
-            await blobClient.UploadAsync(stream, overwrite: true);
+            using (var uploadStream = file.OpenReadStream())
+            {
+                await blobClient.UploadAsync(uploadStream, overwrite: true);
+            }
 
+            // Save or update resume record in Cosmos DB
             var existing = await _resumeRepository.GetByUserIdAsync(userId);
             if (existing != null)
             {
                 existing.FileName = file.FileName;
                 existing.BlobUrl = blobClient.Uri.ToString();
+                existing.ExtractedText = extractedText;
                 existing.UploadedAt = DateTime.UtcNow;
                 var updated = await _resumeRepository.UpdateAsync(existing);
                 return Ok(updated);
@@ -64,6 +87,7 @@ namespace ResumeIQ.API.Controllers
                 UserId = userId,
                 FileName = file.FileName,
                 BlobUrl = blobClient.Uri.ToString(),
+                ExtractedText = extractedText,
                 UploadedAt = DateTime.UtcNow
             };
             var created = await _resumeRepository.AddAsync(resume);

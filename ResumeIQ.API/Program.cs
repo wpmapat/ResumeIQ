@@ -40,6 +40,7 @@ builder.Services.AddSingleton(cosmosClient);
 
 // AI Service
 builder.Services.AddScoped<IAIService, AIService>();
+builder.Services.AddScoped<IResumeParserService, ResumeParserService>();
 
 // Repositories
 builder.Services.AddScoped<IResumeRepository, ResumeRepository>();
