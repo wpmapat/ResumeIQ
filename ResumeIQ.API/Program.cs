@@ -33,9 +33,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 
 // Cosmos DB
-var cosmosEndpoint = builder.Configuration["CosmosDb:AccountEndpoint"]!;
 var cosmosDatabaseName = builder.Configuration["CosmosDb:DatabaseName"]!;
-var cosmosClient = new CosmosClient(cosmosEndpoint, new DefaultAzureCredential());
+var cosmosConnectionString = builder.Configuration["CosmosDb:ConnectionString"];
+var cosmosClient = !string.IsNullOrEmpty(cosmosConnectionString)
+    ? new CosmosClient(cosmosConnectionString)
+    : new CosmosClient(builder.Configuration["CosmosDb:AccountEndpoint"]!, new DefaultAzureCredential());
 builder.Services.AddSingleton(cosmosClient);
 
 // AI Service
