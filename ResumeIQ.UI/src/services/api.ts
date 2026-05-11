@@ -1,10 +1,12 @@
 import type { IPublicClientApplication } from '@azure/msal-browser'
-import { loginRequest, apiBaseUrl } from '../authConfig'
+import { apiBaseUrl } from '../authConfig'
+
+const apiScopes = ['api://eb976d6a-5600-4005-b278-570c1831cf8f/access_as_user']
 
 async function getToken(instance: IPublicClientApplication): Promise<string> {
     const accounts = instance.getAllAccounts()
     const response = await instance.acquireTokenSilent({
-        ...loginRequest,
+        scopes: apiScopes,
         account: accounts[0],
     })
     return response.accessToken
