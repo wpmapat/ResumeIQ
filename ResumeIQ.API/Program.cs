@@ -22,7 +22,8 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins(
-            "http://localhost:5173"
+            "http://localhost:5173",
+            "https://brave-stone-020404c1e.azurestaticapps.net"
         )
         .AllowAnyHeader()
         .AllowAnyMethod();

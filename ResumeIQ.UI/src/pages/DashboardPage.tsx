@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMsal } from '@azure/msal-react'
 import { getJobApplications, deleteJobApplication } from '../services/api'
+import AddApplicationModal from './AddApplicationModal'
 
 type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected'
 
@@ -11,6 +12,22 @@ type JobApplication = {
     status: ApplicationStatus
     appliedDate: string
     notes: string
+}
+
+const thStyle: React.CSSProperties = {
+    padding: '0.75rem 1rem',
+    textAlign: 'left',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+}
+
+const tdStyle: React.CSSProperties = {
+    padding: '1rem',
+    fontSize: '0.9rem',
+    color: '#374151',
 }
 
 const statusColors: Record<ApplicationStatus, { bg: string; text: string }> = {
@@ -25,6 +42,7 @@ export default function DashboardPage() {
     const [applications, setApplications] = useState<JobApplication[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [showModal, setShowModal] = useState(false)
 
     useEffect(() => {
         getJobApplications(instance)
@@ -79,7 +97,7 @@ export default function DashboardPage() {
                         </p>
                     </div>
                     <button
-                        onClick={() => alert('Add Application — coming soon!')}
+                        onClick={() => setShowModal(true)}
                         style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.6rem 1.25rem', fontWeight: 600 }}
                     >
                         + Add Application
@@ -103,47 +121,57 @@ export default function DashboardPage() {
                     </div>
                 )}
 
-                {applications.map(app => (
-                    <div key={app.id} style={{
-                        background: 'white',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        padding: '1.25rem 1.5rem',
-                        marginBottom: '1rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                        cursor: 'pointer',
-                    }}>
-                        <div>
-                            <div style={{ fontWeight: 600, fontSize: '1rem', color: '#111827' }}>{app.roleTitle}</div>
-                            <div style={{ color: '#6b7280', fontSize: '0.9rem', marginTop: '0.2rem' }}>{app.companyName}</div>
-                            <div style={{ color: '#9ca3af', fontSize: '0.8rem', marginTop: '0.2rem' }}>
-                                Applied {new Date(app.appliedDate).toLocaleDateString()}
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <span style={{
-                                background: statusColors[app.status].bg,
-                                color: statusColors[app.status].text,
-                                padding: '0.3rem 0.85rem',
-                                borderRadius: '20px',
-                                fontSize: '0.8rem',
-                                fontWeight: 600,
-                            }}>
-                                {app.status}
-                            </span>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleDelete(app.id) }}
-                                style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '6px', padding: '0.3rem 0.75rem', fontSize: '0.8rem' }}
-                            >
-                                Delete
-                            </button>
-                        </div>
+                {applications.length > 0 && (
+                    <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                    <th style={thStyle}>Role</th>
+                                    <th style={thStyle}>Company</th>
+                                    <th style={thStyle}>Applied Date</th>
+                                    <th style={thStyle}>Status</th>
+                                    <th style={thStyle}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {applications.map((app, i) => (
+                                    <tr key={app.id} style={{ borderBottom: i < applications.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: 'pointer' }}>
+                                        <td style={tdStyle}><span style={{ fontWeight: 600, color: '#111827' }}>{app.roleTitle}</span></td>
+                                        <td style={tdStyle}>{app.companyName}</td>
+                                        <td style={tdStyle}>{new Date(app.appliedDate).toLocaleDateString()}</td>
+                                        <td style={tdStyle}>
+                                            <span style={{
+                                                background: statusColors[app.status].bg,
+                                                color: statusColors[app.status].text,
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '20px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                            }}>
+                                                {app.status}
+                                            </span>
+                                        </td>
+                                        <td style={tdStyle}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDelete(app.id) }}
+                                                style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '6px', padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                ))}
+                )}
             </div>
+            {showModal && (
+                <AddApplicationModal
+                    onClose={() => setShowModal(false)}
+                    onCreated={(app) => setApplications(prev => [app, ...prev])}
+                />
+            )}
         </div>
     )
 }

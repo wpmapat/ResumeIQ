@@ -16,4 +16,4 @@ export const loginRequest: PopupRequest = {
     scopes: ['openid', 'profile', 'User.Read', 'api://eb976d6a-5600-4005-b278-570c1831cf8f/access_as_user'],
 };
 
-export const apiBaseUrl = 'https://resumeiq-api.azurewebsites.net';
+export const apiBaseUrl = 'https://resumeiq-api-anc0d2d6e8fefsd3.northcentralus-01.azurewebsites.net';
