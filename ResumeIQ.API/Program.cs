@@ -60,6 +60,21 @@ builder.Services.AddSingleton(blobServiceClient);
 var app = builder.Build();
 
 app.UseCors();
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var origin = context.Request.Headers.Origin.ToString();
+        if (!string.IsNullOrEmpty(origin))
+            context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        await context.Response.WriteAsJsonAsync(new { error = feature?.Error?.Message, type = feature?.Error?.GetType().Name });
+    });
+});
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
