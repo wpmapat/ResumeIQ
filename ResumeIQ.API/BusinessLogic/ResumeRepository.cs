@@ -13,9 +13,28 @@ namespace ResumeIQ.API.BusinessLogic
             _container = cosmosClient.GetContainer(databaseName, "Resumes");
         }
 
-        public async Task<Resume?> GetByUserIdAsync(string userId)
+        public async Task<IEnumerable<Resume>> GetAllByUserIdAsync(string userId)
         {
-            var query = new QueryDefinition("SELECT * FROM c WHERE c.userId = @userId")
+            var query = new QueryDefinition("SELECT * FROM c WHERE c.userId = @userId ORDER BY c.uploadedAt DESC")
+                .WithParameter("@userId", userId);
+
+            var results = new List<Resume>();
+            using var iterator = _container.GetItemQueryIterator<Resume>(query,
+                requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+
+            while (iterator.HasMoreResults)
+            {
+                var response = await iterator.ReadNextAsync();
+                results.AddRange(response);
+            }
+
+            return results;
+        }
+
+        public async Task<Resume?> GetMostRecentByUserIdAsync(string userId)
+        {
+            var query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.uploadedAt DESC OFFSET 0 LIMIT 1")
                 .WithParameter("@userId", userId);
 
             using var iterator = _container.GetItemQueryIterator<Resume>(query,
@@ -33,12 +52,6 @@ namespace ResumeIQ.API.BusinessLogic
         public async Task<Resume> AddAsync(Resume resume)
         {
             var response = await _container.CreateItemAsync(resume, new PartitionKey(resume.UserId));
-            return response.Resource;
-        }
-
-        public async Task<Resume> UpdateAsync(Resume resume)
-        {
-            var response = await _container.ReplaceItemAsync(resume, resume.Id, new PartitionKey(resume.UserId));
             return response.Resource;
         }
 

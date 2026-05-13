@@ -1,5 +1,4 @@
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,71 +34,14 @@ namespace ResumeIQ.API.Controllers
             ?? throw new UnauthorizedAccessException();
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> GetAll() =>
+            Ok(await _resumeRepository.GetAllByUserIdAsync(GetUserId()));
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> GetDownloadUrl(string id)
         {
-            var resume = await _resumeRepository.GetByUserIdAsync(GetUserId());
-            if (resume == null) return NotFound();
-            return Ok(resume);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Upload(IFormFile file)
-        {
-            if (file == null || file.Length == 0) return BadRequest("No file provided.");
-
-            var extension = Path.GetExtension(file.FileName).ToLower();
-            if (extension != ".pdf" && extension != ".docx")
-                return BadRequest("Only PDF and DOCX files are supported.");
-
-            var userId = GetUserId();
-
-            // Extract text from file before uploading
-            string extractedText;
-            using (var parseStream = file.OpenReadStream())
-            {
-                extractedText = _resumeParserService.ExtractText(parseStream, extension);
-            }
-
-            // Upload to Blob Storage
-            var containerName = _configuration["BlobStorage:ContainerName"]!;
-            var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
-            var blobName = $"{userId}/{Guid.NewGuid()}{extension}";
-            var blobClient = containerClient.GetBlobClient(blobName);
-
-            using (var uploadStream = file.OpenReadStream())
-            {
-                await blobClient.UploadAsync(uploadStream, overwrite: true);
-            }
-
-            // Save or update resume record in Cosmos DB
-            var existing = await _resumeRepository.GetByUserIdAsync(userId);
-            if (existing != null)
-            {
-                existing.FileName = file.FileName;
-                existing.BlobUrl = blobClient.Uri.ToString();
-                existing.ExtractedText = extractedText;
-                existing.UploadedAt = DateTime.UtcNow;
-                var updated = await _resumeRepository.UpdateAsync(existing);
-                return Ok(updated);
-            }
-
-            var resume = new Resume
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserId = userId,
-                FileName = file.FileName,
-                BlobUrl = blobClient.Uri.ToString(),
-                ExtractedText = extractedText,
-                UploadedAt = DateTime.UtcNow
-            };
-            var created = await _resumeRepository.AddAsync(resume);
-            return CreatedAtAction(nameof(Get), created);
-        }
-
-        [HttpGet("download")]
-        public async Task<IActionResult> GetDownloadUrl()
-        {
-            var resume = await _resumeRepository.GetByUserIdAsync(GetUserId());
+            var resumes = await _resumeRepository.GetAllByUserIdAsync(GetUserId());
+            var resume = resumes.FirstOrDefault(r => r.Id == id);
             if (resume == null) return NotFound();
 
             var blobUri = new Uri(resume.BlobUrl);
@@ -118,9 +60,48 @@ namespace ResumeIQ.API.Controllers
             sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
             var sasParams = sasBuilder.ToSasQueryParameters(userDelegationKey, uriBuilder.AccountName);
-            var downloadUrl = $"{resume.BlobUrl}?{sasParams}";
+            return Ok(new { url = $"{resume.BlobUrl}?{sasParams}", fileName = resume.FileName });
+        }
 
-            return Ok(new { url = downloadUrl, fileName = resume.FileName });
+        [HttpPost]
+        public async Task<IActionResult> Upload(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return BadRequest("No file provided.");
+
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (extension != ".pdf" && extension != ".docx")
+                return BadRequest("Only PDF and DOCX files are supported.");
+
+            var userId = GetUserId();
+
+            string extractedText;
+            using (var parseStream = file.OpenReadStream())
+            {
+                extractedText = _resumeParserService.ExtractText(parseStream, extension);
+            }
+
+            var containerName = _configuration["BlobStorage:ContainerName"]!;
+            var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+            var blobName = $"{userId}/{Guid.NewGuid()}{extension}";
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            using (var uploadStream = file.OpenReadStream())
+            {
+                await blobClient.UploadAsync(uploadStream, overwrite: true);
+            }
+
+            var resume = new Resume
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserId = userId,
+                FileName = file.FileName,
+                BlobUrl = blobClient.Uri.ToString(),
+                ExtractedText = extractedText,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            var created = await _resumeRepository.AddAsync(resume);
+            return Ok(created);
         }
 
         [HttpDelete("{id}")]

@@ -51,8 +51,8 @@ export async function getResume(instance: IPublicClientApplication) {
     return res.json()
 }
 
-export async function getResumeDownloadUrl(instance: IPublicClientApplication): Promise<{ url: string; fileName: string }> {
-    const res = await authFetch(instance, '/api/resume/download')
+export async function getResumeDownloadUrl(instance: IPublicClientApplication, id: string): Promise<{ url: string; fileName: string }> {
+    const res = await authFetch(instance, `/api/resume/${id}/download`)
     if (!res.ok) throw new Error('Failed to get download URL')
     return res.json()
 }

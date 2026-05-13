@@ -12,14 +12,9 @@ type Props = {
     onBack: () => void
 }
 
-const sectionStyle: React.CSSProperties = {
-    background: 'white', borderRadius: '12px', padding: '1.5rem',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: '1.25rem',
-}
-
 export default function ResumePage({ onBack }: Props) {
     const { instance } = useMsal()
-    const [resume, setResume] = useState<Resume | null>(null)
+    const [resumes, setResumes] = useState<Resume[]>([])
     const [loading, setLoading] = useState(true)
     const [uploading, setUploading] = useState(false)
     const [error, setError] = useState('')
@@ -27,8 +22,8 @@ export default function ResumePage({ onBack }: Props) {
 
     useEffect(() => {
         getResume(instance)
-            .then(setResume)
-            .catch(() => setError('Failed to load resume'))
+            .then(data => setResumes(Array.isArray(data) ? data : data ? [data] : []))
+            .catch(() => setError('Failed to load resumes'))
             .finally(() => setLoading(false))
     }, [instance])
 
@@ -38,8 +33,8 @@ export default function ResumePage({ onBack }: Props) {
         setUploading(true)
         setError('')
         try {
-            const result = await uploadResume(instance, file)
-            setResume(result)
+            const created = await uploadResume(instance, file)
+            setResumes(prev => [created, ...prev])
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -48,21 +43,20 @@ export default function ResumePage({ onBack }: Props) {
         }
     }
 
-    const handleView = async () => {
+    const handleView = async (id: string) => {
         try {
-            const { url } = await getResumeDownloadUrl(instance)
+            const { url } = await getResumeDownloadUrl(instance, id)
             window.open(url, '_blank')
         } catch {
             setError('Failed to generate download link.')
         }
     }
 
-    const handleDelete = async () => {
-        if (!resume) return
-        if (!confirm('Delete your resume? This cannot be undone.')) return
+    const handleDelete = async (id: string) => {
+        if (!confirm('Delete this resume? This cannot be undone.')) return
         try {
-            await deleteResume(instance, resume.id)
-            setResume(null)
+            await deleteResume(instance, id)
+            setResumes(prev => prev.filter(r => r.id !== id))
         } catch {
             setError('Failed to delete resume.')
         }
@@ -83,70 +77,75 @@ export default function ResumePage({ onBack }: Props) {
                     ← Back to Applications
                 </button>
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#1f2937' }}>My Resume</h2>
-                    <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
-                        Upload your resume to enable AI analysis and cover letter generation.
-                    </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#1f2937' }}>My Resumes</h2>
+                        <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
+                            AI analysis uses your most recently uploaded resume.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.6rem 1.25rem', fontWeight: 600, fontSize: '0.85rem', opacity: uploading ? 0.7 : 1, whiteSpace: 'nowrap' }}
+                    >
+                        {uploading ? 'Uploading…' : '+ Upload Resume'}
+                    </button>
+                    <input ref={fileInputRef} type="file" accept=".pdf,.docx" onChange={handleFileChange} style={{ display: 'none' }} />
                 </div>
 
                 {error && <p style={{ color: '#b91c1c', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
 
                 {loading ? (
                     <p style={{ color: '#6b7280' }}>Loading...</p>
-                ) : resume ? (
-                    <div style={sectionStyle}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
-                            <div style={{ background: '#ede9fe', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>
-                                📄
-                            </div>
-                            <div>
-                                <p style={{ margin: 0, fontWeight: 600, color: '#111827', fontSize: '0.95rem' }}>{resume.fileName}</p>
-                                <p style={{ margin: '0.2rem 0 0', color: '#6b7280', fontSize: '0.8rem' }}>
-                                    Uploaded {new Date(resume.uploadedAt).toLocaleDateString()}
-                                </p>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <button
-                                onClick={handleView}
-                                style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: '8px', padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.85rem' }}
-                            >
-                                View
-                            </button>
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={uploading}
-                                style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.85rem', opacity: uploading ? 0.7 : 1 }}
-                            >
-                                {uploading ? 'Uploading…' : 'Replace'}
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '8px', padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.85rem' }}
-                            >
-                                Delete
-                            </button>
-                        </div>
-                        <input ref={fileInputRef} type="file" accept=".pdf,.docx" onChange={handleFileChange} style={{ display: 'none' }} />
-                    </div>
-                ) : (
+                ) : resumes.length === 0 ? (
                     <div
                         style={{
-                            ...sectionStyle,
-                            border: '2px dashed #d8b4fe',
-                            textAlign: 'center',
-                            padding: '3rem 2rem',
-                            cursor: 'pointer',
+                            background: 'white', borderRadius: '12px', border: '2px dashed #d8b4fe',
+                            padding: '3rem 2rem', textAlign: 'center',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer',
                         }}
                         onClick={() => fileInputRef.current?.click()}
                     >
                         <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📄</div>
-                        <p style={{ margin: '0 0 0.5rem', fontWeight: 600, color: '#374151' }}>
-                            {uploading ? 'Uploading…' : 'Upload your resume'}
-                        </p>
+                        <p style={{ margin: '0 0 0.5rem', fontWeight: 600, color: '#374151' }}>Upload your first resume</p>
                         <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.85rem' }}>PDF or DOCX, max 10 MB</p>
-                        <input ref={fileInputRef} type="file" accept=".pdf,.docx" onChange={handleFileChange} style={{ display: 'none' }} />
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {resumes.map((resume, i) => (
+                            <div key={resume.id} style={{
+                                background: 'white', borderRadius: '12px', padding: '1rem 1.25rem',
+                                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                                display: 'flex', alignItems: 'center', gap: '1rem',
+                                border: i === 0 ? '2px solid #7c3aed' : '2px solid transparent',
+                            }}>
+                                <div style={{ fontSize: '1.75rem', flexShrink: 0 }}>📄</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#111827', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {resume.fileName}
+                                        {i === 0 && <span style={{ marginLeft: '0.5rem', background: '#ede9fe', color: '#6d28d9', fontSize: '0.7rem', padding: '0.1rem 0.5rem', borderRadius: '20px', fontWeight: 600 }}>Latest</span>}
+                                    </p>
+                                    <p style={{ margin: '0.15rem 0 0', color: '#9ca3af', fontSize: '0.8rem' }}>
+                                        Uploaded {new Date(resume.uploadedAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                                    <button
+                                        onClick={() => handleView(resume.id)}
+                                        style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: '6px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600 }}
+                                    >
+                                        View
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(resume.id)}
+                                        style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '6px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600 }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
