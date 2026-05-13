@@ -77,6 +77,7 @@ export default function ApplicationDetailPage({ appId, onBack, onDeleted }: Prop
     const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null)
     const [coverLetterLoading, setCoverLetterLoading] = useState(false)
     const [coverLetterError, setCoverLetterError] = useState('')
+    const [copied, setCopied] = useState(false)
 
     useEffect(() => {
         Promise.all([
@@ -299,9 +300,23 @@ export default function ApplicationDetailPage({ appId, onBack, onDeleted }: Prop
                 <div style={sectionStyle}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h3 style={{ margin: 0, fontSize: '1rem', color: '#374151' }}>Cover Letter</h3>
-                        <button onClick={handleGenerateCoverLetter} disabled={coverLetterLoading} style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.85rem', fontWeight: 600, opacity: coverLetterLoading ? 0.7 : 1 }}>
-                            {coverLetterLoading ? 'Generating…' : coverLetter ? 'Regenerate' : 'Generate Cover Letter'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {coverLetter && (
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(coverLetter.content)
+                                        setCopied(true)
+                                        setTimeout(() => setCopied(false), 2000)
+                                    }}
+                                    style={{ background: '#f3f4f6', color: '#374151', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.85rem', fontWeight: 600 }}
+                                >
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </button>
+                            )}
+                            <button onClick={handleGenerateCoverLetter} disabled={coverLetterLoading} style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.85rem', fontWeight: 600, opacity: coverLetterLoading ? 0.7 : 1 }}>
+                                {coverLetterLoading ? 'Generating…' : coverLetter ? 'Regenerate' : 'Generate Cover Letter'}
+                            </button>
+                        </div>
                     </div>
                     {coverLetterError && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.75rem' }}>{coverLetterError}</p>}
                     {coverLetter ? (

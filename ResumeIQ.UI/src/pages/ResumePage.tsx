@@ -30,6 +30,11 @@ export default function ResumePage({ onBack }: Props) {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
+        if (file.size > 10 * 1024 * 1024) {
+            setError('File must be under 10 MB.')
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
         setUploading(true)
         setError('')
         try {

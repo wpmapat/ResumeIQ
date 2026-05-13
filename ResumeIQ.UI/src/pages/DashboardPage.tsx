@@ -134,6 +134,24 @@ export default function DashboardPage() {
                 {loading && <p style={{ color: '#6b7280' }}>Loading...</p>}
                 {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
 
+                {!loading && !error && applications.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                        {(['Applied', 'Interview', 'Offer', 'Rejected'] as ApplicationStatus[]).map(status => {
+                            const count = applications.filter(a => a.status === status).length
+                            return (
+                                <div key={status} style={{
+                                    background: 'white', borderRadius: '12px', padding: '1rem 1.25rem',
+                                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                                    borderLeft: `4px solid ${statusColors[status].text}`,
+                                }}>
+                                    <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700, color: statusColors[status].text }}>{count}</p>
+                                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>{status}</p>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+
                 {!loading && !error && applications.length === 0 && (
                     <div style={{
                         background: 'white',
