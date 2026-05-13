@@ -3,6 +3,7 @@ import { useMsal } from '@azure/msal-react'
 import { getJobApplications, deleteJobApplication } from '../services/api'
 import AddApplicationModal from './AddApplicationModal'
 import ApplicationDetailPage from './ApplicationDetailPage'
+import ResumePage from './ResumePage'
 
 type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected'
 
@@ -45,6 +46,7 @@ export default function DashboardPage() {
     const [error, setError] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
+    const [showResume, setShowResume] = useState(false)
 
     useEffect(() => {
         getJobApplications(instance)
@@ -61,6 +63,10 @@ export default function DashboardPage() {
 
     const handleLogout = () => {
         instance.logoutRedirect().catch(console.error)
+    }
+
+    if (showResume) {
+        return <ResumePage onBack={() => setShowResume(false)} />
     }
 
     if (selectedAppId) {
@@ -92,6 +98,12 @@ export default function DashboardPage() {
                     ResumeIQ
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button
+                        onClick={() => setShowResume(true)}
+                        style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                    >
+                        My Resume
+                    </button>
                     <span style={{ color: '#ddd6fe', fontSize: '0.9rem' }}>{accounts[0]?.name}</span>
                     <button
                         onClick={handleLogout}

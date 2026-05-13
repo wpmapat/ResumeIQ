@@ -44,6 +44,34 @@ export async function deleteJobApplication(instance: IPublicClientApplication, i
     if (!res.ok) throw new Error('Failed to delete job application')
 }
 
+export async function getResume(instance: IPublicClientApplication) {
+    const res = await authFetch(instance, '/api/resume')
+    if (res.status === 404) return null
+    if (!res.ok) throw new Error('Failed to fetch resume')
+    return res.json()
+}
+
+export async function uploadResume(instance: IPublicClientApplication, file: File) {
+    const token = await getToken(instance)
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${apiBaseUrl}/api/resume`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form,
+    })
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Failed to upload resume')
+    }
+    return res.json()
+}
+
+export async function deleteResume(instance: IPublicClientApplication, id: string) {
+    const res = await authFetch(instance, `/api/resume/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to delete resume')
+}
+
 export async function getJobApplication(instance: IPublicClientApplication, id: string) {
     const res = await authFetch(instance, `/api/jobapplications/${id}`)
     if (!res.ok) throw new Error('Failed to fetch job application')
