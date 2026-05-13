@@ -1,4 +1,6 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ResumeIQ.API.BusinessLogic;
@@ -92,6 +94,33 @@ namespace ResumeIQ.API.Controllers
             };
             var created = await _resumeRepository.AddAsync(resume);
             return CreatedAtAction(nameof(Get), created);
+        }
+
+        [HttpGet("download")]
+        public async Task<IActionResult> GetDownloadUrl()
+        {
+            var resume = await _resumeRepository.GetByUserIdAsync(GetUserId());
+            if (resume == null) return NotFound();
+
+            var blobUri = new Uri(resume.BlobUrl);
+            var uriBuilder = new BlobUriBuilder(blobUri);
+
+            var expiresOn = DateTimeOffset.UtcNow.AddMinutes(15);
+            var userDelegationKey = await _blobServiceClient.GetUserDelegationKeyAsync(DateTimeOffset.UtcNow, expiresOn);
+
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = uriBuilder.BlobContainerName,
+                BlobName = uriBuilder.BlobName,
+                Resource = "b",
+                ExpiresOn = expiresOn,
+            };
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+            var sasParams = sasBuilder.ToSasQueryParameters(userDelegationKey, uriBuilder.AccountName);
+            var downloadUrl = $"{resume.BlobUrl}?{sasParams}";
+
+            return Ok(new { url = downloadUrl, fileName = resume.FileName });
         }
 
         [HttpDelete("{id}")]

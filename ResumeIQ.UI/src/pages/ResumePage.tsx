@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMsal } from '@azure/msal-react'
-import { getResume, uploadResume, deleteResume } from '../services/api'
+import { getResume, uploadResume, deleteResume, getResumeDownloadUrl } from '../services/api'
 
 type Resume = {
     id: string
@@ -45,6 +45,15 @@ export default function ResumePage({ onBack }: Props) {
         } finally {
             setUploading(false)
             if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
+    const handleView = async () => {
+        try {
+            const { url } = await getResumeDownloadUrl(instance)
+            window.open(url, '_blank')
+        } catch {
+            setError('Failed to generate download link.')
         }
     }
 
@@ -100,11 +109,17 @@ export default function ResumePage({ onBack }: Props) {
                         </div>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
+                                onClick={handleView}
+                                style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: '8px', padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.85rem' }}
+                            >
+                                View
+                            </button>
+                            <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={uploading}
                                 style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.85rem', opacity: uploading ? 0.7 : 1 }}
                             >
-                                {uploading ? 'Uploading…' : 'Replace Resume'}
+                                {uploading ? 'Uploading…' : 'Replace'}
                             </button>
                             <button
                                 onClick={handleDelete}
