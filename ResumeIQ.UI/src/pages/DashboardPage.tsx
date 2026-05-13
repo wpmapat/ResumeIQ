@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useMsal } from '@azure/msal-react'
 import { getJobApplications, deleteJobApplication } from '../services/api'
 import AddApplicationModal from './AddApplicationModal'
+import ApplicationDetailPage from './ApplicationDetailPage'
 
 type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected'
 
@@ -43,6 +44,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [showModal, setShowModal] = useState(false)
+    const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
 
     useEffect(() => {
         getJobApplications(instance)
@@ -59,6 +61,19 @@ export default function DashboardPage() {
 
     const handleLogout = () => {
         instance.logoutRedirect().catch(console.error)
+    }
+
+    if (selectedAppId) {
+        return (
+            <ApplicationDetailPage
+                appId={selectedAppId}
+                onBack={() => setSelectedAppId(null)}
+                onDeleted={(id) => {
+                    setApplications(prev => prev.filter(a => a.id !== id))
+                    setSelectedAppId(null)
+                }}
+            />
+        )
     }
 
     return (
@@ -135,7 +150,7 @@ export default function DashboardPage() {
                             </thead>
                             <tbody>
                                 {applications.map((app, i) => (
-                                    <tr key={app.id} style={{ borderBottom: i < applications.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: 'pointer' }}>
+                                    <tr key={app.id} onClick={() => setSelectedAppId(app.id)} style={{ borderBottom: i < applications.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: 'pointer' }}>
                                         <td style={tdStyle}><span style={{ fontWeight: 600, color: '#111827' }}>{app.roleTitle}</span></td>
                                         <td style={tdStyle}>{app.companyName}</td>
                                         <td style={tdStyle}>{new Date(app.appliedDate).toLocaleDateString()}</td>

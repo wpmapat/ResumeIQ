@@ -43,3 +43,50 @@ export async function deleteJobApplication(instance: IPublicClientApplication, i
     const res = await authFetch(instance, `/api/jobapplications/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete job application')
 }
+
+export async function getJobApplication(instance: IPublicClientApplication, id: string) {
+    const res = await authFetch(instance, `/api/jobapplications/${id}`)
+    if (!res.ok) throw new Error('Failed to fetch job application')
+    return res.json()
+}
+
+export async function updateJobApplication(instance: IPublicClientApplication, id: string, data: object) {
+    const res = await authFetch(instance, `/api/jobapplications/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error('Failed to update job application')
+    return res.json()
+}
+
+export async function getAIAnalysis(instance: IPublicClientApplication, jobApplicationId: string) {
+    const res = await authFetch(instance, `/api/jobapplications/${jobApplicationId}/analysis`)
+    if (res.status === 404) return null
+    if (!res.ok) throw new Error('Failed to fetch analysis')
+    return res.json()
+}
+
+export async function triggerAIAnalysis(instance: IPublicClientApplication, jobApplicationId: string) {
+    const res = await authFetch(instance, `/api/jobapplications/${jobApplicationId}/analysis`, { method: 'POST' })
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Failed to analyse resume')
+    }
+    return res.json()
+}
+
+export async function getCoverLetter(instance: IPublicClientApplication, jobApplicationId: string) {
+    const res = await authFetch(instance, `/api/jobapplications/${jobApplicationId}/coverletter`)
+    if (res.status === 404) return null
+    if (!res.ok) throw new Error('Failed to fetch cover letter')
+    return res.json()
+}
+
+export async function generateCoverLetter(instance: IPublicClientApplication, jobApplicationId: string) {
+    const res = await authFetch(instance, `/api/jobapplications/${jobApplicationId}/coverletter`, { method: 'POST' })
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Failed to generate cover letter')
+    }
+    return res.json()
+}
