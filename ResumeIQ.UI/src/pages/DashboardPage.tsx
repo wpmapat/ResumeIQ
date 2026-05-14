@@ -4,6 +4,7 @@ import { getJobApplications, deleteJobApplication } from '../services/api'
 import AddApplicationModal from './AddApplicationModal'
 import ApplicationDetailPage from './ApplicationDetailPage'
 import ResumePage from './ResumePage'
+import InfoPage from './InfoPage'
 
 type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected'
 
@@ -47,6 +48,7 @@ export default function DashboardPage() {
     const [showModal, setShowModal] = useState(false)
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
     const [showResume, setShowResume] = useState(false)
+    const [showInfo, setShowInfo] = useState(false)
 
     useEffect(() => {
         getJobApplications(instance)
@@ -67,6 +69,10 @@ export default function DashboardPage() {
 
     if (showResume) {
         return <ResumePage onBack={() => setShowResume(false)} />
+    }
+
+    if (showInfo) {
+        return <InfoPage onBack={() => setShowInfo(false)} />
     }
 
     if (selectedAppId) {
@@ -103,6 +109,12 @@ export default function DashboardPage() {
                         style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                     >
                         My Resume
+                    </button>
+                    <button
+                        onClick={() => setShowInfo(true)}
+                        style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                    >
+                        Help
                     </button>
                     <span style={{ color: '#ddd6fe', fontSize: '0.9rem' }}>{accounts[0]?.name}</span>
                     <button
