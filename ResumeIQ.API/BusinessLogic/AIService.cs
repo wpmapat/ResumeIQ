@@ -34,7 +34,7 @@ namespace ResumeIQ.API.BusinessLogic
                 {{jobDescription}}
                 """;
 
-            var response = StripCodeFences(await SendMessageAsync(prompt));
+            var response = JsonHelper.StripCodeFences(await SendMessageAsync(prompt));
 
             return JsonSerializer.Deserialize<AIAnalysisResult>(response, new JsonSerializerOptions
             {
@@ -80,16 +80,5 @@ namespace ResumeIQ.API.BusinessLogic
             return response.Message.ToString() ?? string.Empty;
         }
 
-        private static string StripCodeFences(string text)
-        {
-            var trimmed = text.Trim();
-            if (trimmed.StartsWith("```"))
-            {
-                var firstNewline = trimmed.IndexOf('\n');
-                if (firstNewline >= 0) trimmed = trimmed[(firstNewline + 1)..];
-                if (trimmed.EndsWith("```")) trimmed = trimmed[..^3].TrimEnd();
-            }
-            return trimmed;
-        }
     }
 }
