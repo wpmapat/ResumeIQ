@@ -91,12 +91,6 @@ export default function DashboardPage() {
     }
 
     const firstName = accounts[0]?.name?.split(' ')[0] ?? 'there'
-    const initials = accounts[0]?.name
-        ?.split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map(n => n[0].toUpperCase())
-        .join('') ?? '?'
 
     return (
         <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
@@ -121,19 +115,7 @@ export default function DashboardPage() {
                         Help
                     </button>
                     <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <div style={{
-                            width: '34px', height: '34px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontWeight: 700, fontSize: '0.8rem',
-                            border: '2px solid rgba(255,255,255,0.3)',
-                            flexShrink: 0,
-                        }}>
-                            {initials}
-                        </div>
-                        <span style={{ color: '#ddd6fe', fontSize: '0.85rem' }}>{accounts[0]?.name}</span>
-                    </div>
+                    <span style={{ color: '#ddd6fe', fontSize: '0.85rem' }}>{accounts[0]?.name}</span>
                     <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                         Sign out
                     </button>
