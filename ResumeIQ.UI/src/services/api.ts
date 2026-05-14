@@ -78,6 +78,11 @@ export async function deleteResume(instance: IPublicClientApplication, id: strin
     if (!res.ok) throw new Error('Failed to delete resume')
 }
 
+export async function setPreferredResume(instance: IPublicClientApplication, id: string) {
+    const res = await authFetch(instance, `/api/resume/${id}/preferred`, { method: 'PUT' })
+    if (!res.ok) throw new Error('Failed to set preferred resume')
+}
+
 export async function getJobApplication(instance: IPublicClientApplication, id: string) {
     const res = await authFetch(instance, `/api/jobapplications/${id}`)
     if (!res.ok) throw new Error('Failed to fetch job application')

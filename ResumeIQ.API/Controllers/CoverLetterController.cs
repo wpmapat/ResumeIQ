@@ -52,7 +52,8 @@ namespace ResumeIQ.API.Controllers
             var jobApp = await _jobApplicationRepository.GetByIdAsync(jobApplicationId, userId);
             if (jobApp == null) return NotFound("Job application not found.");
 
-            var resume = await _resumeRepository.GetMostRecentByUserIdAsync(userId);
+            var allResumes = await _resumeRepository.GetAllByUserIdAsync(userId);
+            var resume = allResumes.FirstOrDefault(r => r.IsPreferred) ?? allResumes.FirstOrDefault();
             if (resume == null) return BadRequest("No resume found. Please upload a resume first.");
             if (string.IsNullOrEmpty(resume.ExtractedText)) return BadRequest("Resume text not yet extracted.");
 

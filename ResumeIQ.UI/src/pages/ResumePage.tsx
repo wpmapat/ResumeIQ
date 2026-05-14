@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMsal } from '@azure/msal-react'
-import { getResume, uploadResume, deleteResume, getResumeDownloadUrl } from '../services/api'
+import { getResume, uploadResume, deleteResume, getResumeDownloadUrl, setPreferredResume } from '../services/api'
 
 type Resume = {
     id: string
     fileName: string
     uploadedAt: string
+    isPreferred: boolean
 }
 
 type Props = {
@@ -54,6 +55,15 @@ export default function ResumePage({ onBack }: Props) {
             window.open(url, '_blank')
         } catch {
             setError('Failed to generate download link.')
+        }
+    }
+
+    const handleSetPreferred = async (id: string) => {
+        try {
+            await setPreferredResume(instance, id)
+            setResumes(prev => prev.map(r => ({ ...r, isPreferred: r.id === id })))
+        } catch {
+            setError('Failed to set preferred resume.')
         }
     }
 
@@ -118,24 +128,32 @@ export default function ResumePage({ onBack }: Props) {
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {resumes.map((resume, i) => (
+                        {resumes.map((resume) => (
                             <div key={resume.id} style={{
                                 background: 'white', borderRadius: '12px', padding: '1rem 1.25rem',
                                 boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                                 display: 'flex', alignItems: 'center', gap: '1rem',
-                                border: i === 0 ? '2px solid #7c3aed' : '2px solid transparent',
+                                border: resume.isPreferred ? '2px solid #7c3aed' : '2px solid transparent',
                             }}>
                                 <div style={{ fontSize: '1.75rem', flexShrink: 0 }}>📄</div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ margin: 0, fontWeight: 600, color: '#111827', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {resume.fileName}
-                                        {i === 0 && <span style={{ marginLeft: '0.5rem', background: '#ede9fe', color: '#6d28d9', fontSize: '0.7rem', padding: '0.1rem 0.5rem', borderRadius: '20px', fontWeight: 600 }}>Latest</span>}
+                                        {resume.isPreferred && <span style={{ marginLeft: '0.5rem', background: '#ede9fe', color: '#6d28d9', fontSize: '0.7rem', padding: '0.1rem 0.5rem', borderRadius: '20px', fontWeight: 600 }}>Preferred</span>}
                                     </p>
                                     <p style={{ margin: '0.15rem 0 0', color: '#9ca3af', fontSize: '0.8rem' }}>
                                         Uploaded {new Date(resume.uploadedAt).toLocaleDateString()}
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                                    {!resume.isPreferred && (
+                                        <button
+                                            onClick={() => handleSetPreferred(resume.id)}
+                                            style={{ background: '#f5f3ff', color: '#6d28d9', borderRadius: '6px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600 }}
+                                        >
+                                            Set as Preferred
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => handleView(resume.id)}
                                         style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: '6px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600 }}

@@ -21,5 +21,8 @@ namespace ResumeIQ.API.Models
 
         [JsonProperty("uploadedAt")]
         public DateTime UploadedAt { get; set; }
+
+        [JsonProperty("isPreferred")]
+        public bool IsPreferred { get; set; }
     }
 }

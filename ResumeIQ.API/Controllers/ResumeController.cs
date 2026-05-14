@@ -117,6 +117,17 @@ namespace ResumeIQ.API.Controllers
             }
         }
 
+        [HttpPut("{id}/preferred")]
+        public async Task<IActionResult> SetPreferred(string id)
+        {
+            var userId = GetUserId();
+            var resumes = await _resumeRepository.GetAllByUserIdAsync(userId);
+            if (!resumes.Any(r => r.Id == id)) return NotFound();
+            await _resumeRepository.SetPreferredAsync(id, userId);
+            _logger.LogInformation("Resume {Id} set as preferred for user {UserId}", id, userId);
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {

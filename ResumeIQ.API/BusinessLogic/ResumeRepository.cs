@@ -55,6 +55,16 @@ namespace ResumeIQ.API.BusinessLogic
             return response.Resource;
         }
 
+        public async Task SetPreferredAsync(string id, string userId)
+        {
+            var all = (await GetAllByUserIdAsync(userId)).ToList();
+            foreach (var resume in all)
+            {
+                resume.IsPreferred = resume.Id == id;
+                await _container.UpsertItemAsync(resume, new PartitionKey(userId));
+            }
+        }
+
         public async Task DeleteAsync(string id, string userId)
         {
             await _container.DeleteItemAsync<Resume>(id, new PartitionKey(userId));
