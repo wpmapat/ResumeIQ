@@ -14,17 +14,20 @@ namespace ResumeIQ.API.Controllers
         private readonly IJobApplicationRepository _jobApplicationRepository;
         private readonly IResumeRepository _resumeRepository;
         private readonly IAIService _aiService;
+        private readonly ILogger<AIAnalysisController> _logger;
 
         public AIAnalysisController(
             IAIAnalysisRepository analysisRepository,
             IJobApplicationRepository jobApplicationRepository,
             IResumeRepository resumeRepository,
-            IAIService aiService)
+            IAIService aiService,
+            ILogger<AIAnalysisController> logger)
         {
             _analysisRepository = analysisRepository;
             _jobApplicationRepository = jobApplicationRepository;
             _resumeRepository = resumeRepository;
             _aiService = aiService;
+            _logger = logger;
         }
 
         private string GetUserId() =>
@@ -64,6 +67,7 @@ namespace ResumeIQ.API.Controllers
             };
 
             var created = await _analysisRepository.AddAsync(analysis);
+            _logger.LogInformation("AI analysis triggered for job application {JobApplicationId} by user {UserId}, score {MatchScore}%", jobApplicationId, userId, created.MatchScore);
             return CreatedAtAction(nameof(GetLatest), new { jobApplicationId }, created);
         }
     }

@@ -32,6 +32,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Application Insights
+builder.Services.AddApplicationInsightsTelemetry();
+
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

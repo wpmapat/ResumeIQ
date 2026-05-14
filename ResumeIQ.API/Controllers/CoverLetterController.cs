@@ -14,17 +14,20 @@ namespace ResumeIQ.API.Controllers
         private readonly IJobApplicationRepository _jobApplicationRepository;
         private readonly IResumeRepository _resumeRepository;
         private readonly IAIService _aiService;
+        private readonly ILogger<CoverLetterController> _logger;
 
         public CoverLetterController(
             ICoverLetterRepository coverLetterRepository,
             IJobApplicationRepository jobApplicationRepository,
             IResumeRepository resumeRepository,
-            IAIService aiService)
+            IAIService aiService,
+            ILogger<CoverLetterController> logger)
         {
             _coverLetterRepository = coverLetterRepository;
             _jobApplicationRepository = jobApplicationRepository;
             _resumeRepository = resumeRepository;
             _aiService = aiService;
+            _logger = logger;
         }
 
         private string GetUserId() =>
@@ -34,6 +37,9 @@ namespace ResumeIQ.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLatest(string jobApplicationId)
         {
+            var userId = GetUserId();
+            var jobApp = await _jobApplicationRepository.GetByIdAsync(jobApplicationId, userId);
+            if (jobApp == null) return NotFound();
             var letter = await _coverLetterRepository.GetLatestByJobApplicationIdAsync(jobApplicationId);
             return letter == null ? NotFound() : Ok(letter);
         }
@@ -66,6 +72,7 @@ namespace ResumeIQ.API.Controllers
             };
 
             var created = await _coverLetterRepository.AddAsync(coverLetter);
+            _logger.LogInformation("Cover letter generated for job application {JobApplicationId} by user {UserId}", jobApplicationId, userId);
             return CreatedAtAction(nameof(GetLatest), new { jobApplicationId }, created);
         }
     }

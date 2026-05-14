@@ -11,10 +11,12 @@ namespace ResumeIQ.API.Controllers
     public class JobApplicationController : ControllerBase
     {
         private readonly IJobApplicationRepository _repository;
+        private readonly ILogger<JobApplicationController> _logger;
 
-        public JobApplicationController(IJobApplicationRepository repository)
+        public JobApplicationController(IJobApplicationRepository repository, ILogger<JobApplicationController> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
 
         private string GetUserId() =>
@@ -39,6 +41,7 @@ namespace ResumeIQ.API.Controllers
             jobApplication.UserId = GetUserId();
             jobApplication.CreatedAt = DateTime.UtcNow;
             var created = await _repository.AddAsync(jobApplication);
+            _logger.LogInformation("Job application created: {Id} for user {UserId}", created.Id, created.UserId);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 

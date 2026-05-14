@@ -16,17 +16,20 @@ namespace ResumeIQ.API.Controllers
         private readonly IResumeParserService _resumeParserService;
         private readonly BlobServiceClient _blobServiceClient;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<ResumeController> _logger;
 
         public ResumeController(
             IResumeRepository resumeRepository,
             IResumeParserService resumeParserService,
             BlobServiceClient blobServiceClient,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ILogger<ResumeController> logger)
         {
             _resumeRepository = resumeRepository;
             _resumeParserService = resumeParserService;
             _blobServiceClient = blobServiceClient;
             _configuration = configuration;
+            _logger = logger;
         }
 
         private string GetUserId() =>
@@ -100,14 +103,26 @@ namespace ResumeIQ.API.Controllers
                 UploadedAt = DateTime.UtcNow
             };
 
-            var created = await _resumeRepository.AddAsync(resume);
-            return Ok(created);
+            try
+            {
+                var created = await _resumeRepository.AddAsync(resume);
+                _logger.LogInformation("Resume uploaded: {Id} for user {UserId}, file {FileName}", created.Id, created.UserId, created.FileName);
+                return Ok(created);
+            }
+            catch
+            {
+                _logger.LogError("Cosmos save failed after blob upload for user {UserId}, deleting blob {BlobName}", userId, blobName);
+                await blobClient.DeleteIfExistsAsync();
+                throw;
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            await _resumeRepository.DeleteAsync(id, GetUserId());
+            var userId = GetUserId();
+            await _resumeRepository.DeleteAsync(id, userId);
+            _logger.LogInformation("Resume deleted: {Id} for user {UserId}", id, userId);
             return NoContent();
         }
     }
