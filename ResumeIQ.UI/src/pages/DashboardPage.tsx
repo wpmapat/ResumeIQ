@@ -18,26 +18,33 @@ type JobApplication = {
 }
 
 const thStyle: React.CSSProperties = {
-    padding: '0.75rem 1rem',
+    padding: '0.75rem 1.25rem',
     textAlign: 'left',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    color: '#6b7280',
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    color: '#9ca3af',
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.06em',
 }
 
 const tdStyle: React.CSSProperties = {
-    padding: '1rem',
+    padding: '1rem 1.25rem',
     fontSize: '0.9rem',
     color: '#374151',
 }
 
-const statusColors: Record<ApplicationStatus, { bg: string; text: string }> = {
-    Applied:   { bg: '#ede9fe', text: '#6d28d9' },
-    Interview: { bg: '#fef3c7', text: '#d97706' },
-    Offer:     { bg: '#d1fae5', text: '#065f46' },
-    Rejected:  { bg: '#fee2e2', text: '#b91c1c' },
+const statusColors: Record<ApplicationStatus, { bg: string; text: string; border: string }> = {
+    Applied:   { bg: '#ede9fe', text: '#6d28d9', border: '#7c3aed' },
+    Interview: { bg: '#fef3c7', text: '#d97706', border: '#f59e0b' },
+    Offer:     { bg: '#d1fae5', text: '#065f46', border: '#10b981' },
+    Rejected:  { bg: '#fee2e2', text: '#b91c1c', border: '#ef4444' },
+}
+
+const statIcons: Record<ApplicationStatus, string> = {
+    Applied: '📤',
+    Interview: '🗓️',
+    Offer: '🎉',
+    Rejected: '❌',
 }
 
 export default function DashboardPage() {
@@ -49,6 +56,7 @@ export default function DashboardPage() {
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
     const [showResume, setShowResume] = useState(false)
     const [showInfo, setShowInfo] = useState(false)
+    const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
     useEffect(() => {
         getJobApplications(instance)
@@ -67,14 +75,8 @@ export default function DashboardPage() {
         instance.logoutRedirect().catch(console.error)
     }
 
-    if (showResume) {
-        return <ResumePage onBack={() => setShowResume(false)} />
-    }
-
-    if (showInfo) {
-        return <InfoPage onBack={() => setShowInfo(false)} />
-    }
-
+    if (showResume) return <ResumePage onBack={() => setShowResume(false)} />
+    if (showInfo) return <InfoPage onBack={() => setShowInfo(false)} />
     if (selectedAppId) {
         return (
             <ApplicationDetailPage
@@ -88,6 +90,8 @@ export default function DashboardPage() {
         )
     }
 
+    const firstName = accounts[0]?.name?.split(' ')[0] ?? 'there'
+
     return (
         <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
             {/* Navbar */}
@@ -98,86 +102,109 @@ export default function DashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
             }}>
-                <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.5px' }}>
+                <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
                     ResumeIQ
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button
-                        onClick={() => setShowResume(true)}
-                        style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                    >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <button onClick={() => setShowResume(true)} style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                         My Resume
                     </button>
-                    <button
-                        onClick={() => setShowInfo(true)}
-                        style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                    >
+                    <button onClick={() => setShowInfo(true)} style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                         Help
                     </button>
-                    <span style={{ color: '#ddd6fe', fontSize: '0.9rem' }}>{accounts[0]?.name}</span>
-                    <button
-                        onClick={handleLogout}
-                        style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                    >
+                    <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }} />
+                    <span style={{ color: '#ddd6fe', fontSize: '0.85rem' }}>{accounts[0]?.name}</span>
+                    <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                         Sign out
                     </button>
                 </div>
             </nav>
 
-            {/* Content */}
-            <div style={{ padding: '2.5rem 2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <div>
-                        <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#1f2937' }}>My Applications</h2>
-                        <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
-                            {applications.length} application{applications.length !== 1 ? 's' : ''} tracked
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        style={{ background: '#7c3aed', borderRadius: '8px', padding: '0.6rem 1.25rem', fontWeight: 600 }}
-                    >
-                        + Add Application
-                    </button>
+            {/* Welcome banner */}
+            <div style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%)', padding: '2rem 2rem 2.5rem' }}>
+                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                    <h1 style={{ margin: 0, color: 'white', fontSize: '1.6rem', fontWeight: 700 }}>
+                        Welcome back, {firstName}!
+                    </h1>
+                    <p style={{ margin: '0.4rem 0 0', color: '#ddd6fe', fontSize: '0.95rem' }}>
+                        {applications.length === 0
+                            ? 'Start tracking your job applications below.'
+                            : `You have ${applications.length} application${applications.length !== 1 ? 's' : ''} in progress.`}
+                    </p>
                 </div>
+            </div>
 
-                {loading && <p style={{ color: '#6b7280' }}>Loading...</p>}
-                {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
+            {/* Content */}
+            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem' }}>
 
+                {/* Stat cards */}
                 {!loading && !error && applications.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
                         {(['Applied', 'Interview', 'Offer', 'Rejected'] as ApplicationStatus[]).map(status => {
                             const count = applications.filter(a => a.status === status).length
                             return (
                                 <div key={status} style={{
-                                    background: 'white', borderRadius: '12px', padding: '1rem 1.25rem',
+                                    background: 'white', borderRadius: '12px', padding: '1.25rem 1.5rem',
                                     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                                    borderLeft: `4px solid ${statusColors[status].text}`,
+                                    borderTop: `3px solid ${statusColors[status].border}`,
+                                    display: 'flex', alignItems: 'center', gap: '1rem',
                                 }}>
-                                    <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700, color: statusColors[status].text }}>{count}</p>
-                                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>{status}</p>
+                                    <span style={{ fontSize: '1.5rem' }}>{statIcons[status]}</span>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: statusColors[status].text, lineHeight: 1 }}>{count}</p>
+                                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{status}</p>
+                                    </div>
                                 </div>
                             )
                         })}
                     </div>
                 )}
 
+                {/* Header row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1f2937' }}>My Applications</h2>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        style={{
+                            background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px',
+                            padding: '0.6rem 1.25rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                            boxShadow: '0 2px 6px rgba(124,58,237,0.4)',
+                        }}
+                    >
+                        + Add Application
+                    </button>
+                </div>
+
+                {loading && <p style={{ color: '#9ca3af', textAlign: 'center', padding: '3rem 0' }}>Loading...</p>}
+                {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
+
+                {/* Empty state */}
                 {!loading && !error && applications.length === 0 && (
                     <div style={{
-                        background: 'white',
-                        borderRadius: '12px',
-                        padding: '3rem',
-                        textAlign: 'left',
-                        color: '#6b7280',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        background: 'white', borderRadius: '16px', padding: '4rem 2rem',
+                        textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                     }}>
-                        <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No applications yet</p>
-                        <p style={{ fontSize: '0.9rem' }}>Click "+ Add Application" to track your first job application.</p>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
+                        <h3 style={{ margin: '0 0 0.5rem', color: '#1f2937', fontSize: '1.1rem' }}>No applications yet</h3>
+                        <p style={{ margin: '0 0 1.5rem', color: '#9ca3af', fontSize: '0.9rem' }}>
+                            Track your first job application and let AI help you stand out.
+                        </p>
+                        <button
+                            onClick={() => setShowModal(true)}
+                            style={{
+                                background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px',
+                                padding: '0.7rem 1.5rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                                boxShadow: '0 2px 6px rgba(124,58,237,0.4)',
+                            }}
+                        >
+                            + Add your first application
+                        </button>
                     </div>
                 )}
 
+                {/* Table */}
                 {applications.length > 0 && (
                     <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -192,10 +219,21 @@ export default function DashboardPage() {
                             </thead>
                             <tbody>
                                 {applications.map((app, i) => (
-                                    <tr key={app.id} onClick={() => setSelectedAppId(app.id)} style={{ borderBottom: i < applications.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: 'pointer' }}>
+                                    <tr
+                                        key={app.id}
+                                        onClick={() => setSelectedAppId(app.id)}
+                                        onMouseEnter={() => setHoveredRow(app.id)}
+                                        onMouseLeave={() => setHoveredRow(null)}
+                                        style={{
+                                            borderBottom: i < applications.length - 1 ? '1px solid #f3f4f6' : 'none',
+                                            cursor: 'pointer',
+                                            background: hoveredRow === app.id ? '#faf5ff' : 'white',
+                                            transition: 'background 0.15s',
+                                        }}
+                                    >
                                         <td style={tdStyle}><span style={{ fontWeight: 600, color: '#111827' }}>{app.roleTitle}</span></td>
-                                        <td style={tdStyle}>{app.companyName}</td>
-                                        <td style={tdStyle}>{new Date(app.appliedDate).toLocaleDateString()}</td>
+                                        <td style={{ ...tdStyle, color: '#6b7280' }}>{app.companyName}</td>
+                                        <td style={{ ...tdStyle, color: '#6b7280' }}>{new Date(app.appliedDate).toLocaleDateString()}</td>
                                         <td style={tdStyle}>
                                             <span style={{
                                                 background: statusColors[app.status].bg,
@@ -203,7 +241,7 @@ export default function DashboardPage() {
                                                 padding: '0.25rem 0.75rem',
                                                 borderRadius: '20px',
                                                 fontSize: '0.8rem',
-                                                fontWeight: 600,
+                                                fontWeight: 700,
                                             }}>
                                                 {app.status}
                                             </span>
@@ -211,7 +249,7 @@ export default function DashboardPage() {
                                         <td style={tdStyle}>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleDelete(app.id) }}
-                                                style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '6px', padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+                                                style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '6px', padding: '0.3rem 0.75rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
                                             >
                                                 Delete
                                             </button>
@@ -223,6 +261,7 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
+
             {showModal && (
                 <AddApplicationModal
                     onClose={() => setShowModal(false)}
