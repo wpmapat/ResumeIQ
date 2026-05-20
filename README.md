@@ -8,6 +8,19 @@ Upload your resume once, add a job description, and get a match score, missing k
 
 ---
 
+## Why I built this
+
+AI-assisted job searching is becoming mainstream, but most tools treat it as a black box — paste your resume, get a vague score, move on. I wanted to build something production-grade that makes the AI reasoning transparent and actionable: not just *how well* your resume matches, but *what specifically* to change and why. It was also an opportunity to solve some genuinely interesting engineering problems end to end.
+
+The interesting engineering problems were:
+
+- **User data isolation enforced at the database layer** — every Cosmos DB query is scoped by the `oid` claim extracted from the JWT, using the user ID as the partition key. Even if the API layer had a bug, a cross-user read is physically impossible — Cosmos won't find the document in the wrong partition.
+- **Credentialless cloud auth with Managed Identity** — Blob Storage access uses Azure Managed Identity with no connection strings in code or config. Download URLs are short-lived SAS tokens (15 min expiry) generated server-side using a delegated user key, so the client never holds a persistent credential.
+- **Structured output from a generative model** — Claude returns freeform text, but the analysis endpoint needs a typed JSON object (match score, keyword list, rewritten bullets). The solution strips markdown code fences, deserialises with case-insensitive matching, and falls back gracefully — making the integration robust without over-engineering a retry loop.
+- **Text extraction across formats** — resumes arrive as PDF or DOCX. Rather than a third-party conversion service, text is extracted in-process using PdfPig (PDF) and OpenXml (DOCX), keeping the pipeline simple and the extracted text immediately available for AI analysis without an async job.
+
+---
+
 ## What it does
 
 Most job seekers send the same resume to every application and get filtered out by ATS before a human ever reads it. ResumeIQ bridges the gap between finding a job and getting shortlisted:
