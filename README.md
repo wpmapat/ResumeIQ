@@ -33,6 +33,36 @@ Most job seekers send the same resume to every application and get filtered out 
 
 ---
 
+## Key features
+
+### Resume management
+- Upload PDF or DOCX — text is extracted in-process, no third-party conversion service
+- Mark a resume as **preferred** so AI analysis always uses the right one
+- Secure downloads via short-lived SAS tokens (15 min expiry); the client never holds a persistent storage credential
+
+### AI-powered analysis
+- **Match score** (0–100) showing how well your resume aligns with a job description
+- **Missing keywords** — the exact skills and terms the employer is looking for that aren't in your resume
+- **Rewritten bullet points** — your existing bullets rewritten to mirror the job description language
+- Powered by Claude (claude-sonnet-4-6), with robust JSON parsing that handles freeform model output
+
+### Cover letter generation
+- One-click tailored cover letter per job application
+- Uses your resume text, job description, company name, and role title as context
+- Stored per application so you can revisit or regenerate at any time
+
+### Application tracker
+- Full CRUD for job applications — company, role, job description, applied date, notes
+- Status tracking across the full pipeline: Applied → Interview → Offer / Rejected
+- All data scoped to the signed-in user — no shared state between accounts
+
+### Auth & security
+- Sign in with Microsoft (Azure Entra ID) — no separate account or password required
+- API access protected by JWT bearer tokens scoped to the application
+- User data isolation enforced at the Cosmos DB partition key level
+
+---
+
 ## Tech stack
 
 | Layer | Technology |
