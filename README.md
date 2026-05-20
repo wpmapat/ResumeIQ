@@ -4,8 +4,6 @@ AI-powered resume analysis and cover letter generation for job seekers.
 
 Upload your resume once, add a job description, and get a match score, missing keyword gaps, rewritten bullet points, and a tailored cover letter — all in under 30 seconds.
 
-**Live app:** https://brave-stone-020404c1e.azurestaticapps.net
-
 ---
 
 ## What it does
