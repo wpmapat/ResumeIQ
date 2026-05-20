@@ -83,4 +83,45 @@ public class JobApplicationControllerTests
         Assert.Equal(UserId, input.UserId);
         Assert.NotEqual(default, input.CreatedAt);
     }
+
+    [Fact]
+    public async Task Update_NotFound_ReturnsNotFound()
+    {
+        var repo = new Mock<IJobApplicationRepository>();
+        repo.Setup(r => r.GetByIdAsync("missing", UserId)).ReturnsAsync((JobApplication?)null);
+
+        var controller = BuildController(repo);
+        var result = await controller.Update("missing", new JobApplication());
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task Update_Success_ReturnsOk()
+    {
+        var repo = new Mock<IJobApplicationRepository>();
+        var existing = new JobApplication { Id = "job-1", UserId = UserId, CompanyName = "Old Co" };
+        repo.Setup(r => r.GetByIdAsync("job-1", UserId)).ReturnsAsync(existing);
+        repo.Setup(r => r.UpdateAsync(It.IsAny<JobApplication>())).ReturnsAsync((JobApplication a) => a);
+
+        var controller = BuildController(repo);
+        var result = await controller.Update("job-1", new JobApplication { CompanyName = "New Co", RoleTitle = "Dev" });
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("New Co", ((JobApplication)ok.Value!).CompanyName);
+    }
+
+    [Fact]
+    public async Task Delete_Exists_ReturnsNoContent()
+    {
+        var repo = new Mock<IJobApplicationRepository>();
+        var existing = new JobApplication { Id = "job-1", UserId = UserId };
+        repo.Setup(r => r.GetByIdAsync("job-1", UserId)).ReturnsAsync(existing);
+
+        var controller = BuildController(repo);
+        var result = await controller.Delete("job-1");
+
+        Assert.IsType<NoContentResult>(result);
+        repo.Verify(r => r.DeleteAsync("job-1", UserId), Times.Once);
+    }
 }

@@ -58,7 +58,9 @@ namespace ResumeIQ.API.Controllers
             existing.AppliedDate = jobApplication.AppliedDate;
             existing.Notes = jobApplication.Notes;
 
-            return Ok(await _repository.UpdateAsync(existing));
+            var updated = await _repository.UpdateAsync(existing);
+            _logger.LogInformation("Job application updated: {Id} for user {UserId}", updated.Id, updated.UserId);
+            return Ok(updated);
         }
 
         [HttpDelete("{id}")]
@@ -67,6 +69,7 @@ namespace ResumeIQ.API.Controllers
             var existing = await _repository.GetByIdAsync(id, GetUserId());
             if (existing == null) return NotFound();
             await _repository.DeleteAsync(id, GetUserId());
+            _logger.LogInformation("Job application deleted: {Id} for user {UserId}", id, GetUserId());
             return NoContent();
         }
     }
